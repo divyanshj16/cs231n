@@ -35,13 +35,17 @@ def svm_loss_naive(W, X, y, reg):
       margin = scores[j] - correct_class_score + 1 # note delta = 1
       if margin > 0:
         loss += margin
+        dW[:,j] += X[i].T
+        dW[:,y[i]] += -X[i].T 
 
   # Right now the loss is a sum over all training examples, but we want it
   # to be an average instead so we divide by num_train.
   loss /= num_train
-
+  dW /= num_train
+  dW += reg * W
   # Add regularization to the loss.
-  loss += reg * np.sum(W * W)
+  loss += 0.5 * reg * np.sum(W * W)
+
 
   #############################################################################
   # TODO:                                                                     #
@@ -65,12 +69,32 @@ def svm_loss_vectorized(W, X, y, reg):
   loss = 0.0
   dW = np.zeros(W.shape) # initialize the gradient as zero
 
+
+  # y = y.reshape(X.shape[0],1)
+
+
   #############################################################################
   # TODO:                                                                     #
   # Implement a vectorized version of the structured SVM loss, storing the    #
   # result in loss.                                                           #
   #############################################################################
-  pass
+  delta = 1
+  pred = X.dot(W)
+  num_train = X.shape[0]
+  c_scores = pred[range(num_train),list(y)].reshape(num_train,1)  # num_train X 1  # spent 2 hours writing this line if intereseted read below
+  """
+  numpy as two types of array one is ndarray with some shape like (a,b) , (5,3,4) etc.
+  and another like (a,) like (10,).
+  Intially i converted y to (10,1) type because (10,) mostly creates problem and they did this time too.
+  when i was trying to run this
+  pred[range(num_train),list(y)]
+  it was returning a N X N matrix, and when I tried using the original y which was of the shape (N,) it returns (N,) vector
+  which I further convert to N,1.
+  So be carefull
+  """
+  margins = np.maximum(0,pred - c_scores + delta) # num_train X num_classes
+  margins[np.arange(num_train),list(y)] = 0 
+  loss = np.sum(margins)/num_train + 0.5 * reg * np.sum(W[:,W.shape[1] - 1] * W[:,W.shape[1] - 1])  # We do not regularize bias
   #############################################################################
   #                             END OF YOUR CODE                              #
   #############################################################################
@@ -85,7 +109,12 @@ def svm_loss_vectorized(W, X, y, reg):
   # to reuse some of the intermediate values that you used to compute the     #
   # loss.                                                                     #
   #############################################################################
-  pass
+  mask = np.zeros(pred.shape)
+  mask[margins > 0] = 1
+  mask[np.arange(num_train), list(y)] = -np.sum(mask, axis=1)
+
+  dW = (X.T).dot(mask)
+  dW = dW/num_train + reg*W
   #############################################################################
   #                             END OF YOUR CODE                              #
   #############################################################################
