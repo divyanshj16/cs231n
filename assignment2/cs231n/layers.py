@@ -56,10 +56,8 @@ def affine_backward(dout, cache):
     ###########################################################################
     num_examples = x.shape[0]
     dw = x.reshape(num_examples,-1).T.dot(dout)
-    print(type(dw))
     db = np.sum(dout,axis=0)
     assert w.shape == dw.shape
-    print(db.shape,b.shape,w.shape,dw.shape)
     assert db.shape == b.shape
     dx = dout.dot(w.T).reshape(x.shape)
     ###########################################################################
