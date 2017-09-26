@@ -185,6 +185,12 @@ class Solver(object):
         # Perform a parameter update
         for p, w in self.model.params.items():
             dw = grads[p]
+
+            # self.zs = 1
+            # if self.zs == 1:
+            #     self.zs = 2
+            #     print(p)
+
             config = self.optim_configs[p]
             next_w, next_config = self.update_rule(w, dw, config)
             self.model.params[p] = next_w

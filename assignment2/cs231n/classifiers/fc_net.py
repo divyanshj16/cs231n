@@ -175,7 +175,23 @@ class FullyConnectedNet(object):
         # beta2, etc. Scale parameters should be initialized to one and shift      #
         # parameters should be initialized to zero.                                #
         ############################################################################
-        pass
+        for layer_number in range(self.num_layers):
+
+            if layer_number == 0:
+                # for first layer 1st dimension of weight is input dim
+                self.params['W' + str(layer_number + 1)] = np.random.randn(input_dim,hidden_dims[layer_number]) * weight_scale
+                self.params['b' + str(layer_number + 1)] = np.zeros(hidden_dims[layer_number],)
+            elif layer_number == self.num_layers - 1:
+                # for the output layer
+                self.params['W' + str(layer_number + 1)] =  np.random.randn(hidden_dims[layer_number - 1], num_classes) * weight_scale
+                self.params['b' + str(layer_number + 1)] =  np.zeros(num_classes,)         
+            else:
+                self.params['W' + str(layer_number + 1)] = np.random.randn(hidden_dims[layer_number - 1], hidden_dims[layer_number]) * weight_scale
+                self.params['b' + str(layer_number + 1)] = np.zeros(hidden_dims[layer_number],)
+             
+
+        
+            
         ############################################################################
         #                             END OF YOUR CODE                             #
         ############################################################################
@@ -196,7 +212,7 @@ class FullyConnectedNet(object):
         # pass of the second batch normalization layer, etc.
         self.bn_params = []
         if self.use_batchnorm:
-            self.bn_params = [{'mode': 'train'} for i in range(self.num_layers - 1)]
+            self.bn_params = [{'mode': 'train'} for i in range(self.self.num_layers - 1)]
 
         # Cast all parameters to the correct datatype
         for k, v in self.params.items():
@@ -233,7 +249,17 @@ class FullyConnectedNet(object):
         # self.bn_params[1] to the forward pass for the second batch normalization #
         # layer, etc.                                                              #
         ############################################################################
-        pass
+        scores = X
+        cache = {}
+        for layer_number in range(self.num_layers):
+            # cache[0] will remain untouched for the ease of programming
+            scores, cache[str(layer_number + 1)] = affine_forward(scores,self.params['W' + str(layer_number + 1)],self.params['b' + str(layer_number + 1)])
+         
+            # don't apply relu to last layer
+            if layer_number != self.num_layers - 1:
+            	scores, cache[str(layer_number + 1) + '_activation'] = relu_forward(scores)                
+
+           
         ############################################################################
         #                             END OF YOUR CODE                             #
         ############################################################################
@@ -242,7 +268,7 @@ class FullyConnectedNet(object):
         if mode == 'test':
             return scores
 
-        loss, grads = 0.0, {}
+        loss, grads, reg_val = 0.0, {}, 0.0
         ############################################################################
         # TODO: Implement the backward pass for the fully-connected net. Store the #
         # loss in the loss variable and gradients in the grads dictionary. Compute #
@@ -256,7 +282,23 @@ class FullyConnectedNet(object):
         # automated tests, make sure that your L2 regularization includes a factor #
         # of 0.5 to simplify the expression for the gradient.                      #
         ############################################################################
-        pass
+        loss, dout = softmax_loss(scores,y)
+
+        for layer_number in range(self.num_layers):
+            reg_val += np.sum(np.square(self.params['W' + str(layer_number + 1)]))    
+        loss = loss + (0.5 * self.reg * reg_val)
+
+        
+        for layer_number in reversed(range(self.num_layers)):
+
+            dout , grads['W' + str(layer_number + 1)], grads['b' + str(layer_number + 1)] = affine_backward(dout,cache[str(layer_number + 1)])
+            grads['W' + str(layer_number + 1)] = grads['W' + str(layer_number + 1)] + (self.reg * self.params['W' + str(layer_number + 1)])
+
+            if layer_number != 0:  # we do not have cache['0']
+                dout = relu_backward(dout,cache[str(layer_number) + '_activation'])
+
+
+
         ############################################################################
         #                             END OF YOUR CODE                             #
         ############################################################################
