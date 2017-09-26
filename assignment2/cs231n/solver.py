@@ -161,6 +161,7 @@ class Solver(object):
         self.val_acc_history = []
 
         # Make a deep copy of the optim_config for each parameter
+        # why this??
         self.optim_configs = {}
         for p in self.model.params:
             d = {k: v for k, v in self.optim_config.items()}
@@ -185,13 +186,9 @@ class Solver(object):
         # Perform a parameter update
         for p, w in self.model.params.items():
             dw = grads[p]
-
-            # self.zs = 1
-            # if self.zs == 1:
-            #     self.zs = 2
-            #     print(p)
-
-            config = self.optim_configs[p]
+            # print(self.optim_configs['W1'].keys()) 
+            # optim config is a dict with key names as W1, W2 and then it contains learning rate inside that. It's a dict of dict!!
+            config = self.optim_configs[p] 
             next_w, next_config = self.update_rule(w, dw, config)
             self.model.params[p] = next_w
             self.optim_configs[p] = next_config

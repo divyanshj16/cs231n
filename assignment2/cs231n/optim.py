@@ -60,12 +60,14 @@ def sgd_momentum(w, dw, config=None):
     config.setdefault('momentum', 0.9)
     v = config.get('velocity', np.zeros_like(w))
 
+
     next_w = None
     ###########################################################################
     # TODO: Implement the momentum update formula. Store the updated value in #
     # the next_w variable. You should also use and update the velocity v.     #
     ###########################################################################
-    pass
+    v = config['momentum'] * v - config['learning_rate'] * dw
+    next_w = w + v
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
@@ -99,7 +101,9 @@ def rmsprop(x, dx, config=None):
     # in the next_x variable. Don't forget to update cache value stored in    #
     # config['cache'].                                                        #
     ###########################################################################
-    pass
+    cache = config['decay_rate'] * config['cache'] + (1 - config['decay_rate']) * np.square(dx)
+    next_x = x - (config['learning_rate'] * dx / (np.sqrt(cache) + config['epsilon']))
+    config['cache'] = cache
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
@@ -122,13 +126,13 @@ def adam(x, dx, config=None):
     - t: Iteration number.
     """
     if config is None: config = {}
-    config.setdefault('learning_rate', 1e-3)
-    config.setdefault('beta1', 0.9)
-    config.setdefault('beta2', 0.999)
-    config.setdefault('epsilon', 1e-8)
-    config.setdefault('m', np.zeros_like(x))
-    config.setdefault('v', np.zeros_like(x))
-    config.setdefault('t', 1)
+    learning_rate = config.setdefault('learning_rate', 1e-3)
+    beta1 = config.setdefault('beta1', 0.9)
+    beta2 = config.setdefault('beta2', 0.999)
+    eps = config.setdefault('epsilon', 1e-8)
+    m = config.setdefault('m', np.zeros_like(x))
+    v = config.setdefault('v', np.zeros_like(x))
+    t = config.setdefault('t', 0)  # change default value to 0
 
     next_x = None
     ###########################################################################
@@ -136,7 +140,16 @@ def adam(x, dx, config=None):
     # the next_x variable. Don't forget to update the m, v, and t variables   #
     # stored in config.                                                       #
     ###########################################################################
-    pass
+    t = t + 1
+    m = beta1 * m + (1 - beta1) * dx
+    mt = m / (1 - beta1 ** t)
+    v = beta2 * v + (1 - beta2) * (dx ** 2)
+    vt = v / (1 - beta2 ** t)
+    next_x = x - (learning_rate * mt / (np.sqrt(vt) + eps))    
+    config['m'] = m
+    config['v'] = v
+    config['t'] = t
+
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
