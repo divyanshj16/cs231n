@@ -265,7 +265,9 @@ class FullyConnectedNet(object):
 			if layer_number != self.num_layers - 1:
 				if self.use_batchnorm:
 					scores, cache[str(layer_number + 1) + '_batch_norm'] = batchnorm_forward(scores,self.params['gamma' + str(layer_number + 1)],self.params['beta' + str(layer_number + 1)],self.bn_params[layer_number])
-				scores, cache[str(layer_number + 1) + '_activation'] = relu_forward(scores)                
+				scores, cache[str(layer_number + 1) + '_activation'] = relu_forward(scores)
+				if self.use_dropout:
+					scores, cache[str(layer_number + 1) + '_dropout'] = dropout_forward(scores,self.dropout_param)                
 
 		   
 		############################################################################
@@ -301,11 +303,13 @@ class FullyConnectedNet(object):
 
 			if layer_number != self.num_layers - 1:
 				if self.use_batchnorm:
-					dout , grads['gamma' +  str(layer_number + 1)], grads['beta' +  str(layer_number + 1)] = batchnorm_backward(dout,cache[str(layer_number + 1) + '_batch_norm'])
+					dout , grads['gamma' +  str(layer_number + 1)], grads['beta' +  str(layer_number + 1)] = batchnorm_backward(dout,cache[str(layer_number + 1) + '_batch_norm'])			
 			dout , grads['W' + str(layer_number + 1)], grads['b' + str(layer_number + 1)] = affine_backward(dout,cache[str(layer_number + 1)])
 			grads['W' + str(layer_number + 1)] = grads['W' + str(layer_number + 1)] + (self.reg * self.params['W' + str(layer_number + 1)])
 
 			if layer_number != 0:  # we do not have cache['0']
+				if self.use_dropout:
+					dout = dropout_backward(dout,cache[str(layer_number) + '_dropout'])	
 				dout = relu_backward(dout,cache[str(layer_number) + '_activation'])
 
 
