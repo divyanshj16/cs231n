@@ -430,11 +430,30 @@ def conv_forward_naive(x, w, b, conv_param):
     - cache: (x, w, b, conv_param)
     """
     out = None
+
     ###########################################################################
     # TODO: Implement the convolutional forward pass.                         #
     # Hint: you can use the function np.pad for padding.                      #
     ###########################################################################
-    pass
+    # If you want to make it easily intially assume there is only one example 
+    # one channel and one filter and then add loops on top of them
+    # I took 0th example, 0th channel, ad 0th filter
+    N,C,H,W = x.shape
+    F,C,HH,WW = w.shape
+    H_out = 1 + (H + 2 * conv_param['pad'] - HH) // conv_param['stride']
+    W_out = 1 + (W + 2 * conv_param['pad'] - WW) // conv_param['stride']
+    out = np.zeros(shape=(N,F,H_out,W_out))
+
+    for example_num in range(N):
+        for channel in range(C):
+            for idx_ver,ver in enumerate(range(0,H_out,conv_param['stride'])):
+                for idx_hor,hor in enumerate(range(0,W_out,conv_param['stride'])):
+                    for filter_num in range(F):
+                        x_padded = np.pad(x[example_num,channel],conv_param['pad'],mode='constant')
+                        out[example_num,filter_num,idx_ver,idx_hor] = np.sum(w[filter_num,channel] * x_padded[ver:ver + HH,hor : hor + WW]) 
+                        print(out[example_num,filter_num,idx_ver,idx_hor])
+
+
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
