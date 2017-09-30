@@ -559,7 +559,24 @@ def max_pool_backward_naive(dout, cache):
 	###########################################################################
 	# TODO: Implement the max pooling backward pass                           #
 	###########################################################################
-	pass
+	x,pool_param = cache
+	N,C,H,W = x.shape
+	pool_height,pool_width,stride = pool_param['pool_height'],pool_param['pool_width'],pool_param['stride']
+	N,C,H_out,W_out = dout.shape
+	dx = np.zeros(shape=(N,C,H_out,W_out))
+	mask = np.zeros(x.shape)
+	for example_num in range(N):
+		for idx_ver in range(H_out):
+			for idx_hor in range(W_out):
+				# windowed part of x
+				mask_gate = mask[example_num,:,idx_ver * stride:idx_ver * stride + pool_height,idx_hor * stride : idx_hor * stride + pool_width]
+				x_gate = x[example_num,:,idx_ver * stride:idx_ver * stride + pool_height,idx_hor * stride : idx_hor * stride + pool_width]
+				for channel in range(C):
+					idx_max_ver,idx_max_hor = np.unravel_index(np.argmax(x_gate[channel]),x_gate[channel].shape)
+					mask_gate[channel,idx_max_ver,idx_max_hor] = dout[example_num,channel,idx_ver,idx_hor]
+					mask[example_num,channel,idx_ver * stride:idx_ver * stride + pool_height,idx_hor * stride : idx_hor * stride + pool_width] = mask_gate[channel]
+
+	dx = mask
 	###########################################################################
 	#                             END OF YOUR CODE                            #
 	###########################################################################
