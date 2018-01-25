@@ -430,10 +430,31 @@ def lstm_backward(dh, cache):
     #############################################################################
     N,T,H = dh.shape
     
+    D = cache[T-1][0].shape[1] #gather D cache[any][0] contains x at that timestep
+#     print(D)
+    
+    
+    dx = np.zeros((N, T, D))
+    dh0 = np.zeros((N, H))
+    dWx = np.zeros((D, 4*H))
+    dWh = np.zeros((H, 4*H))
+    db = np.zeros((4*H,))
+    dprev_h = np.zeros((N,H))
+    dprev_c = np.zeros((N,H))
+    
     for t in reversed(range(T)):
-        dht = [:,t:,:]
+        dnext_h = dh[:,t,:] + dprev_h
+        dnext_c = dprev_c        
         
-        dx, dprev_h, dprev_c, dWx, dWh, db = lstm_step_backward(dht,cache[t])
+
+        dx[:,t,:], dprev_h, dprev_c, dWxt, dWht, dbt = lstm_step_backward(dnext_h,dnext_c,cache[t])
+#         for i in [dx[:,t,:], dprev_h, dprev_c, dWxt, dWht, dbt]:
+#             print(i.shape)
+#         break
+        dWx,dWh,db = dWx+dWxt, dWh+dWht, db+dbt
+#         dx[:,t,:] = dxt
+        
+    dh0 = dprev_h
     ##############################################################################
     #                               END OF YOUR CODE                             #
     ##############################################################################
