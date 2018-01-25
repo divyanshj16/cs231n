@@ -67,7 +67,7 @@ def rnn_step_backward(dnext_h, cache):
     ##############################################################################
     prev_h, x, Wx, Wh, next_h = cache
 #     temp = np.arctanh(next_h)
-    dtemp = np.multiply((1 - np.square(next_h)), dnext_h)
+    dtemp = np.multiply((1 - np.square(next_h)), dnext_h)  # derivative of tanh in its own form
     dprev_h = np.dot(dtemp, Wh.T)
     dWh = np.dot(prev_h.T, dtemp)
     dx = np.dot(dtemp, Wx.T)
@@ -279,13 +279,17 @@ def lstm_step_forward(x, prev_h, prev_c, Wx, Wh, b):
     _,H = prev_h.shape
     temp = x.dot(Wx) + prev_h.dot(Wh) + b
     
+#     print(temp.shape)
     gate_i = sigmoid(temp[:,:H])
     gate_f = sigmoid(temp[:,H:2*H])
     gate_o = sigmoid(temp[:,2*H:3*H])
     gate_g = np.tanh(temp[:,3*H:])
     
     next_c = gate_f * prev_c + gate_i * gate_g
-    next_h = gate_o * np.tanh(next_c)
+    temp = np.tanh(next_c)
+    next_h = gate_o * temp
+    
+    cache = (x, Wx, Wh, b, prev_h, prev_c, gate_i, gate_f, gate_o, gate_g, temp)
     ##############################################################################
     #                               END OF YOUR CODE                             #
     ##############################################################################
@@ -317,7 +321,36 @@ def lstm_step_backward(dnext_h, dnext_c, cache):
     # HINT: For sigmoid and tanh you can compute local derivatives in terms of  #
     # the output value from the nonlinearity.                                   #
     #############################################################################
-    pass
+    x, Wx, Wh, b, prev_h, prev_c, gate_i, gate_f, gate_o, gate_g, temp = cache
+    dx = np.zeros_like(x)
+    dprev_h = np.zeros_like(prev_h)
+    dWx = np.zeros_like(Wx)
+    dWh = np.zeros_like(Wh)
+    db = np.zeros_like(b)    
+
+    dtemp = gate_o * dnext_h
+    dsplit = (1 - np.square(temp)) * dtemp
+    dnext_c += dsplit
+    dprev_c = gate_f * dnext_c
+    
+    dgate_o_a = dnext_h * temp
+    dgate_f_a = dnext_c * prev_c
+    dgate_i_a = dnext_c * gate_g
+    dgate_g_a = dnext_c * gate_i
+    
+    dgate_o = gate_o * (1 - gate_o) * dgate_o_a
+    dgate_f = gate_f * (1 - gate_f) * dgate_f_a
+    dgate_i = gate_i * (1 - gate_i) * dgate_i_a
+    dgate_g = (1 - np.square(gate_g)) * dgate_g_a
+    
+    
+    dstacked = np.hstack((dgate_i,dgate_f,dgate_o,dgate_g))
+    
+    dWh = prev_h.T.dot(dstacked)
+    dprev_h = dstacked.dot(Wh.T)    
+    db = np.sum(dstacked,axis=0)
+    dWx = x.T.dot(dstacked)
+    dx = dstacked.dot(Wx.T)
     ##############################################################################
     #                               END OF YOUR CODE                             #
     ##############################################################################
