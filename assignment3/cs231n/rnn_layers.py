@@ -66,8 +66,8 @@ def rnn_step_backward(dnext_h, cache):
     # of the output value from tanh.                                             #
     ##############################################################################
     prev_h, x, Wx, Wh, next_h = cache
-    temp = np.arctanh(next_h)
-    dtemp = np.multiply((1 - np.square(np.tanh(temp))), dnext_h)
+#     temp = np.arctanh(next_h)
+    dtemp = np.multiply((1 - np.square(next_h)), dnext_h)
     dprev_h = np.dot(dtemp, Wh.T)
     dWh = np.dot(prev_h.T, dtemp)
     dx = np.dot(dtemp, Wx.T)
@@ -198,7 +198,7 @@ def word_embedding_forward(x, W):
     #                                                                            #
     # HINT: This can be done in one line using NumPy's array indexing.           #
     ##############################################################################
-    out = W[x,:]        
+    out = W[x]   
     cache = (x,W)
     ##############################################################################
     #                               END OF YOUR CODE                             #
